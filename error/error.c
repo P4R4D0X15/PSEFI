@@ -1,3 +1,26 @@
-// Test malloc
-// Test return SysCall
-// help function
+#include "error.h"
+#include "../common/common.h"
+
+void help_serv() {
+    fprintf(stderr, "Utilisation ./serveur [OPT]\n");
+    fprintf(stderr, "OPT : \n");
+    fprintf(stderr, "\t -h : Affiche ce message d'aide \n");
+    fprintf(stderr, "\t -v : Active le mode verbeux \n");
+    exit(EXIT_FAILURE);
+}
+
+void help_cli() {
+    fprintf(stderr, "Utilisation ./client <chemin de l'image> <ID du filtre>\n");
+    fprintf(stderr, "ID du filtre : \n");
+    fprintf(stderr, "\t 1 : filtre gris \n");
+    exit(EXIT_FAILURE);
+}
+
+void *malloc_safe(int size, const char *err_msg) {
+    void *val = malloc(size);
+    if (val == nullptr) {
+        fprintf(stderr, RED "***** %s *****" RESET "\n", err_msg);
+        exit(EXIT_FAILURE);
+    }
+    return val;
+}
