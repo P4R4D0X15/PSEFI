@@ -93,8 +93,6 @@ int holdall_apply_context2(holdall *ha,
   return 0;
 }
 
-#if defined WANT_HOLDALL_EXT && defined HOLDALL_EXT
-
 // mem_swap : prend en paramètres l'adresse de deux blocs mémoires et échange
 // les deux zones mémoires de taille size pointées par s1 et s2
 static void mem_swap(void *s1, void *s2, size_t size) {
