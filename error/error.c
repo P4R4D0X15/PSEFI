@@ -1,5 +1,6 @@
 #include "error.h"
 #include "../common/common.h"
+#include <stdarg.h>
 
 void help_serv() {
     fprintf(stderr, "Utilisation ./serveur [OPT]\n");
@@ -16,9 +17,15 @@ void help_cli() {
     exit(EXIT_FAILURE);
 }
 
-void *malloc_safe(int size, const char *err_msg) {
+void *malloc_safe(int size, const char *err_msg, int nbptr, ...) {
     void *val = malloc(size);
+    va_list(ap);
     if (val == nullptr) {
+        va_start(ap, nbptr);
+        for (int i = 1; i <= nbptr; i++) {
+            free(va_arg(ap, void *));
+        }
+        va_end(ap);
         fprintf(stderr, RED "***** %s *****" RESET "\n", err_msg);
         exit(EXIT_FAILURE);
     }

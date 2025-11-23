@@ -10,17 +10,17 @@
 #define CHECK_RETURN(arg, err_val, name_function, verbose)                                              \
     {                                                                                                   \
         if (verbose) {                                                                                  \
-            printf(YELLOW "===== Test %s ======" RESET "\n", name_function);      \
+            printf(YELLOW "===== Test %s ======" RESET "\n", name_function);                            \
         }                                                                                               \
         if (arg == err_val) {                                                                           \
             if (verbose) {                                                                              \
-                printf(RED "/!\\ ***** ERREUR DETECTE ***** /!\\" RESET "\n");    \
+                printf(RED "/!\\ ***** ERREUR DETECTE ***** /!\\" RESET "\n");                          \
             }                                                                                           \
             perror(name_function);                                                                      \
             exit(EXIT_FAILURE);                                                                         \
         }                                                                                               \
         if (verbose) {                                                                                  \
-            printf(GREEN "===== Test réussi ======" RESET "\n");   \
+            printf(GREEN "===== Test réussi ======" RESET "\n");                                        \
         }                                                                                               \
     }                                                                                                   \
 
@@ -30,6 +30,8 @@ extern void help_serv();
 // Affiche le manuel d'utilisation client
 extern void help_cli();
 
-// Alloue size octets. Affiche le message d'erreur err_msg en cas d'erreur, 
-// renvoie un pointeur vers la mémoire allouée sinon
-extern void *malloc_safe(int size, const char *err_msg);
+// malloc_safe:
+//      - Cas d'erreur : Libère les ressources associées à la liste variables de 
+//      paramètres et affiche le message d'erreur err_msg  
+//      - Cas de succès : renvoie un pointeur vers la mémoire allouée sinon
+extern void *malloc_safe(int size, const char *err_msg, int nbptr, ...);
