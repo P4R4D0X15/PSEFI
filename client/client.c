@@ -1,59 +1,126 @@
-#include <stdlib.h>
+#include "../error/error.h"
+#include "../common/queue.h"
+#include <semaphore.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+
+#ifndef COMMON_H
+#define COMMON_H
+#include "../common/common.h"
+#endif
 
 #define BUFFER_SIZE 256
 
-#define GRAYSCALE 1
-
-typedef struct {
-    pid_t pid;
-    char path[256];
+typedef struct{
     int filter;
-    int parameters[5];
-}filter_t;
-
-void help();
+    const char *path;
+}opt_t;
 
 int main (int argc, char **argv) {
+
     if (argc < 3) {
-        help();
+        help_cli();
         exit(EXIT_FAILURE);
     }
 
-    pid_t pid = getpid();
-
-    char *pathname = malloc(BUFFER_SIZE);
-    if (pathname == nullptr) {
-        fprintf(stderr, "pathname : error malloc");
-        exit(EXIT_FAILURE);
-    }
-    pathname = argv[1];
-
-    int filter = atoi(argv[2]);
-    if (filter != GRAYSCALE) {
-        fprintf(stderr, "Unsupported filter\n");
+    opt_t *op = malloc(sizeof(*op));
+    if (op == nullptr) {
         exit(EXIT_FAILURE);
     }
 
-    char *tubename = malloc(BUFFER_SIZE);
-    if (tubename == nullptr) {
-        fprintf(stderr, "Error on malloc\n");
+    int opt;
+
+    while ((opt = getopt(argc, argv, "hp:f:")) != -1) {
+        switch (opt) {
+        case 'h':
+            help_cli();
+            break;
+        case 'p':
+            op->path = optarg;
+            break;
+        case 'f':
+            op->filter = atoi(optarg);
+            // Test validité du filtre ce fait dans le serveur
+            break;
+        default:
+            free(op);
+            fprintf(stderr, RED "/!\\ ====== Option non reconnue ====== /!\\ " RESET "\n");
+            help_cli();
+        }
+    }
+
+    printf("Le path:%s\n", op->path);
+
+    pid_t pid = getpid();    
+
+    //char *tubename = malloc_safe(BUFFER_SIZE, "Erreur d'allocation du nom du tube", 1, op);
+    //sprintf(tubename, "/tmp/fifo_rep_%d", pid);
+
+    int seg = shm_open("/seg", O_RDWR, 0666);
+    if (seg == -1) {
+        free(op);
+        perror("shm_open");
         exit(EXIT_FAILURE);
     }
 
-    sprintf(tubename, "/tmp/fifo_rep_%d", pid);
-    if (mkfifo(tubename, 0644) == -1) {
-        perror("mkfifo");
+    volatile queue *q = mmap(nullptr, sizeof(*q), PROT_READ | PROT_WRITE, MAP_SHARED, seg, 0); 
+    if (q == MAP_FAILED) {
+        shm_unlink("/seg");
+        free(op);
+        perror("mmap");
         exit(EXIT_FAILURE);
     }
 
+    // Semaphore liée à la file pour éviter l'écriture simultanée
+    sem_t *fifo = sem_open("/fifo", O_RDWR);
+    if (fifo == SEM_FAILED) {
+        shm_unlink("/seg");
+        munmap((void *) q, FIFO_SIZE * sizeof(*q));
+        free(op);
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
+    // Sémaphore liée à la file pour vérifier si la file est vide
+    sem_t *empty = sem_open("/empty", O_RDWR);
+    if (empty == SEM_FAILED) {
+        sem_unlink("/fifo");
+        sem_close(fifo);
+        shm_unlink("/seg");
+        munmap((void *) q, sizeof(*q));
+        free(op);
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
 
-    
-}
+    // Sémaphore liée à la file pour vérifier si la file est pleine
+    sem_t *full = sem_open("/full", O_RDWR);
+    if (full == SEM_FAILED) {
+        sem_unlink("/empty");
+        sem_close(empty);
+        sem_unlink("/fifo");
+        sem_close(fifo);
+        shm_unlink("/seg");
+        munmap((void *) q,sizeof(*q));
+        free(op);
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
 
-void help(){
-    
+    filter_t req;
+
+    req.pid = pid;
+    strcpy(req.path, op->path);
+    req.filter = op->filter;
+    for (int i = 0; i < 5; i++) {
+        req.parameters[i] = -1;
+    }
+
+    CHECK_RETURN(sem_wait(empty), -1, "sem_wait", true);
+    CHECK_RETURN(sem_wait(fifo), -1, "sem_wait", true);
+
+    queue_put((queue *) q, req);
+
+    CHECK_RETURN(sem_post(fifo), -1, "sem_post", true);
+    CHECK_RETURN(sem_post(full), -1, "sem_post", true);
 }

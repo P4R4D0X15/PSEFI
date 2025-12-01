@@ -1,3 +1,5 @@
+#include <semaphore.h>
+
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"
 #define YELLOW  "\x1b[33m"
@@ -14,7 +16,7 @@
         }                                                                                               \
         if (arg == err_val) {                                                                           \
             if (verbose) {                                                                              \
-                printf(RED "/!\\ ***** ERREUR DETECTE ***** /!\\" RESET "\n");                          \
+                fprintf(stderr, RED "/!\\ ***** ERREUR DETECTE ***** /!\\" RESET "\n");                          \
             }                                                                                           \
             perror(name_function);                                                                      \
             exit(EXIT_FAILURE);                                                                         \

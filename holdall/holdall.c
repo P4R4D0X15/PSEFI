@@ -160,5 +160,3 @@ extern void holdall_sort(holdall *ha,
     int (*compar)(const void *, const void *)) {
   heapsort(ha, ha->count, 1, compar);
 }
-
-#endif

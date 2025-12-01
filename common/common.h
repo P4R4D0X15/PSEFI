@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <semaphore.h>
 #include <sys/mman.h>
+#include <sys/wait.h>
 #include <stdbool.h>
 #include <getopt.h>
 #include <string.h>
@@ -21,6 +22,7 @@ typedef struct {
 
 #define GRAYSCALE 1
 #define NEGATIVE 2
+
 
 // cpy_ref:
 //      - Si ref vaut un pointeur nul => renvoie un pointeur nul

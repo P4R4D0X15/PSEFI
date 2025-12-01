@@ -1,6 +1,9 @@
 #include "error.h"
-#include "../common/common.h"
+#include <semaphore.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
 void help_serv() {
     fprintf(stderr, "Utilisation ./serveur [OPT]\n");
