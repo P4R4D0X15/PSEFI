@@ -1,16 +1,18 @@
 #include "../error/error.h"
 #include "../common/queue.h"
+#include <fcntl.h>
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #ifndef COMMON_H
 #define COMMON_H
 #include "../common/common.h"
 #endif
 
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE 4096
 
 typedef struct{
     int filter;
@@ -41,7 +43,6 @@ int main (int argc, char **argv) {
             break;
         case 'f':
             op->filter = atoi(optarg);
-            // Test validité du filtre ce fait dans le serveur
             break;
         default:
             free(op);
@@ -50,12 +51,7 @@ int main (int argc, char **argv) {
         }
     }
 
-    printf("Le path:%s\n", op->path);
-
     pid_t pid = getpid();    
-
-    //char *tubename = malloc_safe(BUFFER_SIZE, "Erreur d'allocation du nom du tube", 1, op);
-    //sprintf(tubename, "/tmp/fifo_rep_%d", pid);
 
     int seg = shm_open("/seg", O_RDWR, 0666);
     if (seg == -1) {
@@ -75,7 +71,6 @@ int main (int argc, char **argv) {
     // Semaphore liée à la file pour éviter l'écriture simultanée
     sem_t *fifo = sem_open("/fifo", O_RDWR);
     if (fifo == SEM_FAILED) {
-        shm_unlink("/seg");
         munmap((void *) q, FIFO_SIZE * sizeof(*q));
         free(op);
         perror("sem_open");
@@ -86,7 +81,6 @@ int main (int argc, char **argv) {
     if (empty == SEM_FAILED) {
         sem_unlink("/fifo");
         sem_close(fifo);
-        shm_unlink("/seg");
         munmap((void *) q, sizeof(*q));
         free(op);
         perror("sem_open");
@@ -100,7 +94,6 @@ int main (int argc, char **argv) {
         sem_close(empty);
         sem_unlink("/fifo");
         sem_close(fifo);
-        shm_unlink("/seg");
         munmap((void *) q,sizeof(*q));
         free(op);
         perror("sem_open");
@@ -123,4 +116,56 @@ int main (int argc, char **argv) {
 
     CHECK_RETURN(sem_post(fifo), -1, "sem_post", true);
     CHECK_RETURN(sem_post(full), -1, "sem_post", true);
+
+    char tubename[256];
+    sprintf(tubename, "/tmp/fifo_rep_%d", pid);
+
+    char *answer_buffer = malloc(BUFFER_SIZE);
+    if (answer_buffer == nullptr){
+        sem_unlink("/empty");
+        sem_close(empty);
+        sem_unlink("/full");
+        sem_close(full);
+        sem_unlink("/fifo");
+        sem_close(fifo);
+        munmap((void *) q,sizeof(*q));
+        free(op);
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
+
+    mkfifo(tubename, 0666);
+    int ans = open(tubename, O_RDONLY | O_CREAT /* | O_EXCL */, 0666);
+    if (ans == -1) {
+        sem_unlink("/empty");
+        sem_close(empty);
+        sem_unlink("/full");
+        sem_close(full);
+        sem_unlink("/fifo");
+        sem_close(fifo);
+        munmap((void *) q,sizeof(*q));
+        free(op);
+        free(answer_buffer);
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
+    if (read(ans, answer_buffer,BUFFER_SIZE) == -1) {
+
+        sem_unlink("/empty");
+        sem_close(empty);
+        sem_unlink("/full");
+        sem_close(full);
+        sem_unlink("/fifo");
+        sem_close(fifo);
+        munmap((void *) q,sizeof(*q));
+        close(ans);
+        free(op);
+        free(answer_buffer);
+        perror("sem_open");
+        exit(EXIT_FAILURE);    
+    }
+
+    printf("%s\n", answer_buffer);
+    close(ans);
+    return EXIT_SUCCESS;
 }

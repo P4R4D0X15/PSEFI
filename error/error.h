@@ -16,7 +16,7 @@
         }                                                                                               \
         if (arg == err_val) {                                                                           \
             if (verbose) {                                                                              \
-                fprintf(stderr, RED "/!\\ ***** ERREUR DETECTE ***** /!\\" RESET "\n");                          \
+                fprintf(stderr, RED "/!\\ ***** ERREUR DETECTE ***** /!\\" RESET "\n");                 \
             }                                                                                           \
             perror(name_function);                                                                      \
             exit(EXIT_FAILURE);                                                                         \

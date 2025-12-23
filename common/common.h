@@ -10,7 +10,6 @@
 #include <stdbool.h>
 #include <getopt.h>
 #include <string.h>
-#include "../holdall/holdall.h"
 #include "../error/error.h"
 
 typedef struct {
@@ -22,6 +21,9 @@ typedef struct {
 
 #define GRAYSCALE 1
 #define NEGATIVE 2
+#define RED_FILTER 3
+#define GREEN_FILTER 4
+#define BLUE_FILTER 5
 
 
 // cpy_ref:
@@ -29,4 +31,4 @@ typedef struct {
 //      - Sinon tente de créer une copie de ref :
 //          - Renvoie un pointeur nul en cas de dépassement de capacité
 //          - Renvoie la copie et la rajoute dans le fourre-tout sinon
-extern void *cpy_ref(const filter_t *ref, holdall *ha);
+extern filter_t cpy_ref(filter_t ref);

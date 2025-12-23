@@ -1,16 +1,13 @@
 #include "../error/error.h"
 #include "../common/queue.h"
-//#include "../holdall/holdall.h"
-#include <fcntl.h>
-#include <semaphore.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/mman.h>
+#include "img/bmp.h"
+#include "worker/worker.h"
 
 #ifndef COMMON_H
 #define COMMON_H
 #include "../common/common.h"
 #endif
+
 
 #define NB_THREAD 8
 
@@ -43,12 +40,6 @@ int main (int argc, char **argv) {
             help_serv();
         }
     }
-
-    /* holdall *ha = holdall_empty();
-    if (ha == nullptr) {
-        free(op);
-        exit(EXIT_FAILURE);
-    } */
 
     shm_unlink("/seg");
 
@@ -116,7 +107,6 @@ int main (int argc, char **argv) {
         sem_unlink("/empty");
         sem_close(empty);
         shm_unlink("/seg");
-        //holdall_dispose(&ha);
         munmap((void *) q,sizeof(*q));
         free(op);
         perror("sem_open");
@@ -132,8 +122,28 @@ int main (int argc, char **argv) {
 
         CHECK_RETURN(sem_post(fifo), -1, "sem_post", true);
         CHECK_RETURN(sem_post(empty), -1, "sem_post", true);
-        
-        printf("Le Filtre voulu :%d\n", cli_req.filter);
-        printf("Voici le path que le pere a reçu: %s\n", cli_req.path);
+
+        switch (fork()) {
+            case -1:
+                sem_unlink("/fifo");
+                sem_close(fifo);
+                sem_unlink("/full");
+                sem_close(full);
+                sem_unlink("/empty");
+                sem_close(empty);
+                shm_unlink("/seg");
+                munmap((void *) q,sizeof(*q));
+                free(op);
+                perror("sem_open");
+                exit(EXIT_FAILURE);
+            case 0:
+                filter_t cpy_req = cpy_ref(cli_req);
+                // Code du worker
+                work(cpy_req);
+                break;
+            
+            default:
+                break;
+        }
     }
 }
