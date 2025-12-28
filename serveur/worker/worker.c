@@ -154,7 +154,7 @@ int work(filter_t req, system_logs *slogs){
     int output = open(filename, O_CREAT | O_WRONLY | O_EXCL, 0666);
     if (output == -1) {
         if (errno == EEXIST) {
-            sprintf(ans_buf, "Traitement en cours pour cette image avec ce même filtre\n");
+            sprintf(ans_buf, "Cette image avec le même filtre existe déjà\nElle se trouve dans le dossier /PSEFI/output/%s\n", filename);
             write(ans_tub, ans_buf, strlen(ans_buf));
             return EXIT_SUCCESS;
         }
