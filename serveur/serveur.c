@@ -29,7 +29,7 @@ int main (int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
         
-    system_logs *slogs = empty_logs();
+
 
     // Détachement du terminal
     switch (fork()) {
@@ -51,16 +51,16 @@ int main (int argc, char **argv) {
 
             // Créatoin du gestionnaire des signaux
             if (sigaction(SIGINT, &config, nullptr) == -1) {
-                clear_logs(&slogs);
                 perror("sigaction");
                 exit(EXIT_FAILURE);
             }
 
             if (sigaction(SIGTERM, &config, nullptr) == -1) {
-                clear_logs(&slogs);
                 perror("sigaction");
                 exit(EXIT_FAILURE);
             }
+
+            system_logs *slogs = empty_logs();
 
             shm_unlink("/seg");
 
@@ -159,6 +159,7 @@ int main (int argc, char **argv) {
                         break;
                     
                     default:
+                        clear_logs(&slogs);
                         break;
                 }
             }
@@ -173,8 +174,6 @@ int main (int argc, char **argv) {
             sem_close(empty);
             shm_unlink("/seg");
             munmap((void *) q,sizeof(*q));
-            
-            clear_logs(&slogs);
 
             return EXIT_SUCCESS;
         default:
