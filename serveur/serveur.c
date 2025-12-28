@@ -29,6 +29,7 @@ int main (int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
         
+    system_logs *slogs = empty_logs();
 
     // Détachement du terminal
     switch (fork()) {
@@ -50,6 +51,13 @@ int main (int argc, char **argv) {
 
             // Créatoin du gestionnaire des signaux
             if (sigaction(SIGINT, &config, nullptr) == -1) {
+                clear_logs(&slogs);
+                perror("sigaction");
+                exit(EXIT_FAILURE);
+            }
+
+            if (sigaction(SIGTERM, &config, nullptr) == -1) {
+                clear_logs(&slogs);
                 perror("sigaction");
                 exit(EXIT_FAILURE);
             }
@@ -59,6 +67,7 @@ int main (int argc, char **argv) {
             // Création du segment de mémoire partagée 
             int seg = shm_open("/seg", O_CREAT | O_RDWR | O_EXCL, 0666);
             if (seg == -1) {
+                clear_logs(&slogs);
                 perror("shm_open");
                 exit(EXIT_FAILURE);
             }
@@ -66,6 +75,7 @@ int main (int argc, char **argv) {
             // Redimensionnement du segment de mémoire partagée
             if (ftruncate(seg, sizeof(queue)) == -1) {
                 shm_unlink("/seg");
+                clear_logs(&slogs);
                 perror("ftruncate");
                 exit(EXIT_FAILURE);
             }
@@ -74,6 +84,7 @@ int main (int argc, char **argv) {
             volatile queue *q = mmap(nullptr, sizeof(*q), PROT_READ | PROT_WRITE, MAP_SHARED, seg, 0);
             if (q == MAP_FAILED) {
                 shm_unlink("/seg");
+                clear_logs(&slogs);
                 perror("mmap");
                 exit(EXIT_FAILURE);
             }
@@ -89,6 +100,7 @@ int main (int argc, char **argv) {
             if (fifo == SEM_FAILED) {
                 shm_unlink("/seg");
                 munmap((void *) q, FIFO_SIZE * sizeof(*q));
+                clear_logs(&slogs);
                 perror("sem_open");
                 exit(EXIT_FAILURE);
             }
@@ -99,6 +111,7 @@ int main (int argc, char **argv) {
                 sem_close(fifo);
                 shm_unlink("/seg");
                 munmap((void *) q, sizeof(*q));
+                clear_logs(&slogs);
                 perror("sem_open");
                 exit(EXIT_FAILURE);
             }
@@ -111,6 +124,7 @@ int main (int argc, char **argv) {
                 sem_close(empty);
                 shm_unlink("/seg");
                 munmap((void *) q,sizeof(*q));
+                clear_logs(&slogs);
                 perror("sem_open");
                 exit(EXIT_FAILURE);
             }
@@ -135,12 +149,13 @@ int main (int argc, char **argv) {
                         sem_close(empty);
                         shm_unlink("/seg");
                         munmap((void *) q,sizeof(*q));
-                        perror("sem_open");
+                        clear_logs(&slogs);
+                        perror("fork");
                         exit(EXIT_FAILURE);
                     case 0:
                         filter_t cpy_req = cpy_ref(cli_req);
                         // Code du worker
-                        work(cpy_req);
+                        work(cpy_req, slogs);
                         break;
                     
                     default:
@@ -150,9 +165,16 @@ int main (int argc, char **argv) {
 
             while (waitpid(-1, nullptr, 0) > 0) {
             }
+            sem_unlink("/fifo");
             sem_close(fifo);
+            sem_unlink("/full");
             sem_close(full);
+            sem_unlink("/empty");
             sem_close(empty);
+            shm_unlink("/seg");
+            munmap((void *) q,sizeof(*q));
+            
+            clear_logs(&slogs);
 
             return EXIT_SUCCESS;
         default:

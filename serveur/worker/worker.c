@@ -1,6 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 #include "../../common/common.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -10,6 +11,7 @@
 #endif
 
 #include <pthread.h>
+#include <libgen.h>
 #include "../img/filter.h"
 #include "worker.h"
 
@@ -23,8 +25,8 @@ bool validate_filter(int filter) {
             || filter == BLUE_FILTER;
 }
 
-int work(filter_t req){
-
+int work(filter_t req, system_logs *slogs){
+    
     // Ouverture du tube réponse en écriture seule
     char tubename[256];
     sprintf(tubename, "/tmp/fifo_rep_%d", req.pid);
@@ -133,10 +135,29 @@ int work(filter_t req){
 
     // Ouverture du fichier de sortie
     char filename[256];
-    sprintf(filename, "output_%d.bmp", req.pid);
+    sprintf(filename, "output_%d_%s.bmp", req.filter, basename(req.path));
+
+    char *existing = search(req.path, req.filter, slogs);
+    if (existing != NULL) {
+        sprintf(ans_buf, "Image déjà traitée : %s\n", existing);
+        write(ans_tub, ans_buf, strlen(ans_buf));
+        close(ans_tub);
+        close(bmp_file);
+        dispose_pixels(thd->pxs, nb_pixels);
+        free(thd);
+        free(hd_buf);
+        free(info_buf);
+        return EXIT_SUCCESS;
+    }
+
 
     int output = open(filename, O_CREAT | O_WRONLY | O_EXCL, 0666);
     if (output == -1) {
+        if (errno == EEXIST) {
+            sprintf(ans_buf, "Traitement en cours pour cette image avec ce même filtre\n");
+            write(ans_tub, ans_buf, strlen(ans_buf));
+            return EXIT_SUCCESS;
+        }
         sprintf(ans_buf, RED"/!\\ ***** Erreur ouverture du fichier de sortie ***** /!\\"RESET"\n");
         close(bmp_file);
         write(ans_tub, ans_buf, strlen(ans_buf));
@@ -250,6 +271,10 @@ int work(filter_t req){
     sprintf(ans_buf, "Votre image se trouve dans le répertoire /PSEFI/output/%s", filename);
     write(ans_tub, ans_buf, strlen(ans_buf));
 
+    char *absolute_path;
+    append_log(req.path, req.filter, (absolute_path = realpath(filename, nullptr)), slogs);
+
+
     close(bmp_file);
     close(output);
     close(ans_tub);
@@ -257,5 +282,6 @@ int work(filter_t req){
     free(thd);
     free(hd_buf);
     free(info_buf);
+    free(absolute_path);
     return EXIT_SUCCESS;
 }

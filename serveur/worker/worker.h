@@ -6,6 +6,8 @@
 
 #endif
 
+#include "../../log/log.h"
+
 // TRAVAIL DU WORKER => TRAITER L'IMAGE ASSOCIÉE AU PATH
 //      1 - Test de la validité du filtre demandé
 //      2 - Test que le path est valide
@@ -17,7 +19,7 @@
 //      5 - Attendre que les threads terminent leurs tâches
 //      6 - "Construire" la réponse
 //      7 - Envoyer la réponse au client
-extern int work(filter_t req);
+extern int work(filter_t req, system_logs *slogs);
 
 
 // validate_filter : Teste si le filtre est valide 
