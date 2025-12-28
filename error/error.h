@@ -9,20 +9,11 @@
 #define RESET   "\x1b[0m"
 #define FLASH   "\x1b[5m"
 
-#define CHECK_RETURN(arg, err_val, name_function, verbose)                                              \
+#define CHECK_RETURN(arg, err_val, name_function)                                                       \
     {                                                                                                   \
-        if (verbose) {                                                                                  \
-            printf(YELLOW "===== Test %s ======" RESET "\n", name_function);                            \
-        }                                                                                               \
         if (arg == err_val) {                                                                           \
-            if (verbose) {                                                                              \
-                fprintf(stderr, RED "/!\\ ***** ERREUR DETECTE ***** /!\\" RESET "\n");                 \
-            }                                                                                           \
             perror(name_function);                                                                      \
             exit(EXIT_FAILURE);                                                                         \
-        }                                                                                               \
-        if (verbose) {                                                                                  \
-            printf(GREEN "===== Test réussi ======" RESET "\n");                                        \
         }                                                                                               \
     }                                                                                                   \
 
@@ -32,8 +23,5 @@ extern void help_serv();
 // Affiche le manuel d'utilisation client
 extern void help_cli();
 
-// malloc_safe:
-//      - Cas d'erreur : Libère les ressources associées à la liste variables de 
-//      paramètres et affiche le message d'erreur err_msg  
-//      - Cas de succès : renvoie un pointeur vers la mémoire allouée sinon
-extern void *malloc_safe(int size, const char *err_msg, int nbptr, ...);
+// sighandler : 
+extern void sighandler(int sig);

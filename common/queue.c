@@ -18,8 +18,6 @@ extern int queue_put(queue *q, filter_t ref){
 
 extern filter_t queue_pop(queue *q){
 
-    printf("%zu\n", q->head);
-
     filter_t val = q->aref[q->head];
     q->head = (q->head + 1) % FIFO_SIZE;
 

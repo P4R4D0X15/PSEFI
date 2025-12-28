@@ -109,13 +109,13 @@ int main (int argc, char **argv) {
         req.parameters[i] = -1;
     }
 
-    CHECK_RETURN(sem_wait(empty), -1, "sem_wait", true);
-    CHECK_RETURN(sem_wait(fifo), -1, "sem_wait", true);
+    CHECK_RETURN(sem_wait(empty), -1, "sem_wait");
+    CHECK_RETURN(sem_wait(fifo), -1, "sem_wait");
 
     queue_put((queue *) q, req);
 
-    CHECK_RETURN(sem_post(fifo), -1, "sem_post", true);
-    CHECK_RETURN(sem_post(full), -1, "sem_post", true);
+    CHECK_RETURN(sem_post(fifo), -1, "sem_post");
+    CHECK_RETURN(sem_post(full), -1, "sem_post");
 
     char tubename[256];
     sprintf(tubename, "/tmp/fifo_rep_%d", pid);
