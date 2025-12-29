@@ -15,13 +15,18 @@ void help_serv() {
 }
 
 void help_cli() {
-    fprintf(stderr, "Utilisation ./client <chemin de l'image> <ID du filtre>\n");
+    fprintf(stderr, "Utilisation ./client -p <chemin de l'image> -f <ID du filtre>\n");
     fprintf(stderr, "ID du filtre : \n");
     fprintf(stderr, "\t 1 : filtre gris \n");
     fprintf(stderr, "\t 2 : filtre négatif \n");
     fprintf(stderr, "\t 3 : filtre rouge \n");
     fprintf(stderr, "\t 4 : filtre vert \n");
     fprintf(stderr, "\t 5 : filtre bleu \n");
+    fprintf(stderr, "OPTION :\n");
+    fprintf(stderr, "\t h : Affiche ce message d'aide \n");
+    fprintf(stderr, "\t p : Chemin de l'image \n");
+    fprintf(stderr, "\t f : Indice du filtre \n");
+
     exit(EXIT_FAILURE);
 }
 

@@ -1,8 +1,3 @@
-#ifndef COMMON_H
-#define COMMON_H
-#include "../../common/common.h"
-#endif
-
 #include "bmp.h"
 
 bitmapfileheader *read_header(int bmp_fd) {

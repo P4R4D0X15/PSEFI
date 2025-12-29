@@ -1,15 +1,4 @@
-#ifndef COMMON_H
-#define COMMON_H
-#include "../../common/common.h"
 #include <errno.h>
-#include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#endif
-
 #include <pthread.h>
 #include <libgen.h>
 #include "../img/filter.h"
